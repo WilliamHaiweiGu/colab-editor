@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview"
   },
+  "author": "Gu Haiwei",
+  "license": "ISC",
   "devDependencies": {
     "vite": "^4.4.5"
   },
