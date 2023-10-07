@@ -1,14 +1,16 @@
 import ShareDBClient from 'sharedb-client'
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
-const socket = new WebSocket('ws://localhost:8080');
-const connection = new ShareDBClient.Connection(socket);
+const sharedb_port = 8080;
+const rws = new ReconnectingWebSocket(`ws://localhost:${sharedb_port}`);
+const connection = new ShareDBClient.Connection(rws);
 const doc = connection.get('documents', 'plaintext');
 
 
 doc.subscribe((err) => {
     if (err) throw err;
     if (doc.type === null)
-        doc.create({ content: '' });  // Initialize the document if it doesn't exist
+        doc.create({ content: '' });
 
     doc.on('op', () => {
         console.log('Received change');
