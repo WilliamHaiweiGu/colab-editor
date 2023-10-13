@@ -4,16 +4,22 @@ import ReconnectingWebSocket from 'reconnecting-websocket';
 const sharedbPort = 8080;
 const opKeyWord = 'op';
 const inputKeyWord = 'input';
-/** @returns The 'unsubsribe' runnable*/
-const subscribeCollab = htmlEditArea => {
+const stdWebSocketCloseCode = 1000;
+/** 
+ * Connect an HTML input or textarea element to collaboration (concurrent editing) service.
+ * @param htmlEditArea the HTML input or textarea element
+ * @param sessionID the match session ID string.
+ * @returns The 'unsubsribe' runnable
+ */
+const subscribeCollab = (htmlEditArea, sessionId) => {
     const rws = new ReconnectingWebSocket(`ws://localhost:${sharedbPort}`);
     const connection = new ShareDBClient.Connection(rws);
-    const doc = connection.get('documents', 'plaintext');
+    // https://share.github.io/sharedb/api/connection#get
+    const doc = connection.get('collab_docs', sessionId);
 
     const fetch = () => {
         htmlEditArea.value = doc.data.content;
     }
-
     doc.subscribe((err) => {
         if (err) throw err;
         if (doc.type === null)
@@ -26,7 +32,6 @@ const subscribeCollab = htmlEditArea => {
         const op = [{ p: ['content'], oi: e.target.value }];
         doc.submitOp(op);
     }
-
     htmlEditArea.addEventListener(inputKeyWord, sendInput);
 
     return () => {
@@ -35,12 +40,12 @@ const subscribeCollab = htmlEditArea => {
             if (err) console.error('Error unsubscribing:', err);
             else console.log('Unsubscribed successfully');
         });
-        rws.close(1000, 'Closing connection normally'); // 1000 is the standard WebSocket close code for normal closure
+        rws.close(stdWebSocketCloseCode, 'Closing connection normally');
         htmlEditArea.removeEventListener(inputKeyWord, sendInput);
     }
 }
 
-const unsubsribeRunnable = subscribeCollab(document.getElementById('editor')/*,id1,id2 or session_id*/);
-
-//TEST
-window.test = unsubsribeRunnable
+// test
+window.test_join = sessionId => {
+    window.test_quit = subscribeCollab(document.getElementById('editor'), sessionId);
+}
